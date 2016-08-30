@@ -7,6 +7,7 @@ import aima.core.agent.AgentProgram;
 import aima.core.agent.Percept;
 import aima.core.agent.impl.*;
 
+import java.util.Stack;
 import java.util.Random;
 
 class MyAgentState
@@ -102,10 +103,11 @@ class MyAgentProgram implements AgentProgram {
 	// Here you can define your variables!
 	public boolean foundEastWall = false;
 	public boolean foundCorner = false;
-	public int nextTurn = state.EAST;
+	public Stack<Integer> queuedActions = new Stack<Integer>();
 	public boolean moveForward = false;
-	public int iterationCounter = 100;
+	public int iterationCounter = 1000;
 	public MyAgentState state = new MyAgentState();
+	public int nextTurn = state.EAST;
 	
 	// moves the Agent to a random start position
 	// uses percepts to update the Agent position - only the position, other percepts are ignored
@@ -129,7 +131,54 @@ class MyAgentProgram implements AgentProgram {
 		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
 	}
 	
-	
+	public Action rightTurn(){
+		state.agent_last_action = state.ACTION_TURN_RIGHT;
+	    state.agent_direction = ((state.agent_direction + 1) % 4);
+		return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	}
+
+	public Action goForward(){
+		state.agent_last_action = state.ACTION_MOVE_FORWARD;
+		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+	}
+
+	public Action leftTurn(){
+		state.agent_last_action = state.ACTION_TURN_LEFT;
+	    state.agent_direction = ((state.agent_direction - 1 +4) % 4);
+		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	}
+
+	public Action doQueuedActions(){
+		switch (queuedActions.pop()) 
+		{
+			case MyAgentState.EAST:
+				return rightTurn();
+			case MyAgentState.WEST:
+				return leftTurn();
+			case MyAgentState.NORTH:
+				return goForward();
+				//something went wrong if default is ran
+			default:
+				return null;
+		}
+	}
+
+	public Action prepareUTurn(int agent_direction){
+		if (agent_direction == state.EAST){
+			queuedActions.push(MyAgentState.WEST);
+			queuedActions.push(MyAgentState.NORTH);
+			queuedActions.push(MyAgentState.WEST);
+		}
+		else
+		{
+			queuedActions.push(MyAgentState.EAST);
+			queuedActions.push(MyAgentState.NORTH);
+			queuedActions.push(MyAgentState.EAST);
+		}
+		return doQueuedActions();
+	}
+
+
 	@Override
 	public Action execute(Percept percept) {
 		
@@ -154,7 +203,6 @@ class MyAgentProgram implements AgentProgram {
     	
 		
 	    iterationCounter--;
-	    System.out.println("efter nedräkning på iterationCounter");
 	    if (iterationCounter==0)
 	    	return NoOpAction.NO_OP;
 
@@ -197,56 +245,40 @@ class MyAgentProgram implements AgentProgram {
 	    	switch(state.agent_direction)
 	    	{
 	    		case MyAgentState.NORTH:
-	    			state.agent_last_action = state.ACTION_TURN_RIGHT;
-	    			state.agent_direction = state.EAST;
-	    			return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	    			return rightTurn();    			
 	    		case MyAgentState.EAST:
 	    			if(bump)
 	    			{
-		    			state.agent_last_action = state.ACTION_TURN_RIGHT;
-	    				state.agent_direction = state.SOUTH;
 	    				foundEastWall = true;
-		    			return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+		    			return rightTurn();
 	    			}
 	    			else
 	    			{
-		    			state.agent_last_action = state.ACTION_MOVE_FORWARD;
-		    			return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-	    			}
-	    			
+		    			return goForward();
+	    			}		
 	    		case MyAgentState.SOUTH:
-	    			state.agent_last_action = state.ACTION_TURN_LEFT;
-	    			state.agent_direction = state.EAST;
-	    			return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	    			return leftTurn();		
 	    		case MyAgentState.WEST:
-	    			state.agent_last_action = state.ACTION_TURN_RIGHT;
-	    			state.agent_direction = state.NORTH;
-	    			return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	    			return rightTurn();
 	    	}
-	    	
 	    }
 	    // found east wall, look for south east corner
-	    else if (!foundCorner)
+	    else if (!foundCorner && foundEastWall)
 	    {
 	    	if (bump)
 	    	{
 	    		foundCorner = true;
-	    		state.agent_last_action = state.ACTION_TURN_RIGHT;
-	    		state.agent_direction = state.WEST;
-	    		return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	    		return rightTurn();
 	    	}
 	    	else
 	    	{
-	    		state.agent_last_action = state.ACTION_MOVE_FORWARD;
-		    	return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+	    		return goForward();
 	    	}
 	    }
 
-	
-	    
 	  //  System.out.println("Selection based on percept");
 	    // Next action selection based on the percept value
-	    if (dirt)
+	  	if (dirt)
 	    {
 	    	System.out.println("DIRT -> choosing SUCK action!");
 	    	state.agent_last_action=state.ACTION_SUCK;
@@ -254,29 +286,29 @@ class MyAgentProgram implements AgentProgram {
 	    } 
 	    else
 	    {
+	    	System.out.println("vi kollar åt  " + state.agent_direction);
+	    	if(queuedActions.size() > 0)
+	    	{
+	    		System.out.println("doing queued actions, size is "+queuedActions.size() );
+	    		return doQueuedActions();
+	    	} 
 	    	if (bump)
 	    	{
+	    		System.out.println("hitta bump");
+
 	    		switch (state.agent_direction)
 	    		{
 	    			case MyAgentState.NORTH:
 	    				if(home)
 	    				{
-	    					state.agent_last_action = state.ACTION_TURN_RIGHT;
-				    		state.agent_direction = state.EAST;
-				    		return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	    					return rightTurn();
 	    				}
 	    				else
 	    				{
-	    					state.agent_last_action = state.ACTION_TURN_LEFT;
-					    	state.agent_direction = state.WEST;
-					    	return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	    					return leftTurn();
 	    				}
 			    	case MyAgentState.EAST:
-			    		state.agent_last_action = state.ACTION_TURN_LEFT;
-				    	state.agent_direction = state.NORTH;
-				    	nextTurn = state.WEST;
-				    	return LIUVacuumEnvironment.ACTION_TURN_LEFT;
-
+			    		return prepareUTurn(MyAgentState.EAST);
 	    			//found a west wall, we could either be home or in the middle of the snaking back up to home.
 	    			case MyAgentState.WEST:
 	    				if (home)
@@ -285,39 +317,41 @@ class MyAgentProgram implements AgentProgram {
 	    				}
 	    				else 
 	    				{
-	    					state.agent_last_action = state.ACTION_TURN_RIGHT;
-				    		state.agent_direction = state.NORTH;
-				    		nextTurn = state.EAST;
-				    		return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+	    					return prepareUTurn(MyAgentState.WEST);
+	    					
 	    				}
-	    				
 	    		}
 	    	}
-	    	else
+	    	/*else
 	    	{	
 	    		if(state.agent_last_action == state.ACTION_MOVE_FORWARD)
 	    		{
 	    			if(state.agent_direction == state.NORTH)
 	    			{
-		    			state.agent_last_action = state.nextTurn;
-		    			state.agent_direction = state.nextTurn;
-		    			return LIUVacuumEnvironment.nextTurn;
+		    			if(nextTurn == state.ACTION_TURN_LEFT)
+		    			{
+		    				state.agent_last_action = state.ACTION_TURN_LEFT;
+		    				state.agent_direction = state.WEST;
+		    				return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+		    			}
+		    				
+		    			else
+		    			{
+		    				state.agent_last_action = state.ACTION_TURN_LEFT;
+		    				state.agent_direction = state.WEST;
+		    				return LIUVacuumEnvironment.ACTION_TURN_RIGHT;	
+		    			}
 	    			}
-	    			else
+	    		}
+	    		else
 	    			{
 						state.agent_last_action=state.ACTION_MOVE_FORWARD;
 	    				return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
 	    			}
-	  	
-	    		}
-	    		else
-	    		{
-					state.agent_last_action=state.ACTION_MOVE_FORWARD;
-	    			return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;	   
-	    		}
-
-	    	}
+	    		}*/
 	    }
+	    state.agent_last_action=state.ACTION_MOVE_FORWARD;
+	    return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;	
 	}
 }
 
