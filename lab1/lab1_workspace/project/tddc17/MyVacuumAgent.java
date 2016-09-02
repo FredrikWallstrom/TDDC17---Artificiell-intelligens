@@ -7,7 +7,8 @@ import aima.core.agent.AgentProgram;
 import aima.core.agent.Percept;
 import aima.core.agent.impl.*;
 
-import java.util.Stack;
+import java.util.*;
+import java.lang.Math;
 import java.util.Random;
 
 class MyAgentState
@@ -35,6 +36,9 @@ class MyAgentState
 	public static final int WEST = 3;
 	public int agent_direction = EAST;
 	
+
+
+
 	MyAgentState()
 	{
 		for (int i=0; i < world.length; i++)
@@ -101,14 +105,41 @@ class MyAgentProgram implements AgentProgram {
 	private Random random_generator = new Random();
 	
 	// Here you can define your variables!
+	
+	public MyAgentState state = new MyAgentState();
 	public boolean foundEastWall = false;
 	public boolean foundCorner = false;
-	public Stack<Integer> queuedActions = new Stack<Integer>();
-	public boolean moveForward = false;
-	public int iterationCounter = 1000;
-	public MyAgentState state = new MyAgentState();
-	public int nextTurn = state.EAST;
+	public Queue<Integer> queuedActions = new LinkedList<Integer>();
+	public ArrayList<Point> path  = new ArrayList<Point>();
 	
+	public HashSet<Point> explored = new HashSet<Point>();
+
+	public static final int FORWARD = 0;  
+	public static final int RIGHT = 1;
+	public static final int LEFT = 2;
+
+	public int iterationCounter = state.world.length * state.world[0].length * 2 ;
+
+	public class Point {
+		public final int x;
+		public final int y;
+
+		public Point(int x, int y){
+   			this.x=x;
+    		this.y=y;
+		}
+
+	@Override
+	public int hashCode() {
+		return 256000*this.x + this.y;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this.x == ((Point)obj).x && this.y == ((Point)obj).y;
+	}
+}
+
 	// moves the Agent to a random start position
 	// uses percepts to update the Agent position - only the position, other percepts are ignored
 	// returns a random action
@@ -144,19 +175,19 @@ class MyAgentProgram implements AgentProgram {
 
 	public Action leftTurn(){
 		state.agent_last_action = state.ACTION_TURN_LEFT;
-	    state.agent_direction = ((state.agent_direction - 1 +4) % 4);
+	    state.agent_direction = ((state.agent_direction - 1 + 4) % 4);
 		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
 	}
 
 	public Action doQueuedActions(){
-		switch (queuedActions.pop()) 
+		switch (queuedActions.remove()) 
 		{
-			case MyAgentState.EAST:
-				return rightTurn();
-			case MyAgentState.WEST:
-				return leftTurn();
-			case MyAgentState.NORTH:
+			case FORWARD:
 				return goForward();
+			case LEFT:
+				return leftTurn();
+			case RIGHT:
+				return rightTurn();
 				//something went wrong if default is ran
 			default:
 				return null;
@@ -165,19 +196,143 @@ class MyAgentProgram implements AgentProgram {
 
 	public Action prepareUTurn(int agent_direction){
 		if (agent_direction == state.EAST){
-			queuedActions.push(MyAgentState.WEST);
-			queuedActions.push(MyAgentState.NORTH);
-			queuedActions.push(MyAgentState.WEST);
+			queuedActions.add(MyAgentState.WEST);
+			queuedActions.add(MyAgentState.NORTH);
+			queuedActions.add(MyAgentState.WEST);
 		}
 		else
 		{
-			queuedActions.push(MyAgentState.EAST);
-			queuedActions.push(MyAgentState.NORTH);
-			queuedActions.push(MyAgentState.EAST);
+			queuedActions.add(MyAgentState.EAST);
+			queuedActions.add(MyAgentState.NORTH);
+			queuedActions.add(MyAgentState.EAST);
 		}
 		return doQueuedActions();
 	}
+/*
+	public ArrayList<Point> buildPathToChild(Point end, HashMap<Point, 
+		Point> childParentLinks){
+		path.add(end);
+		Point parent = childParentLinks.get(end);
+		while(parent != null){
+			path.add(parent);
+			end = parent;
+			parent = childParentLinks.get(end);
+		}
+		System.out.println("sista elementet ska bort");
+		if
+		path.remove(path.size()-1);
+		return path;
+	}*/
 
+	public ArrayList<Point> buildPathToChild(Point end, HashMap<Point, 
+		Point> childParentLinks){
+		path.add(end);
+
+		Point currPoint = end;
+		
+		while((currPoint = childParentLinks.get(currPoint)) != null){
+			path.add(currPoint);
+			System.out.println("test");
+		}
+		Point test = path.get(path.size()-1);
+		System.out.println("punkten vi ska till " + end.x + " " + end.y + " " + "punkten vi ar pa " +  test.x +" " +  test.y );
+		path.remove(path.size()-1);
+		
+		return path;
+	}
+
+
+/*
+	public ArrayList<Point> breadthFirstSearch(){
+		HashMap<Point, Point> childParentLinks = new HashMap<Point, Point>();
+		frontier.add(new Point(state.agent_x_position, state.agent_y_position));
+	    while(true)
+	    {
+	    	System.out.println("frontier storlek" + frontier.size());
+	    	if(frontier.isEmpty())
+	    		return null;
+	    	System.out.println("parent poppas fran frontier");
+	    	Point parent = frontier.remove();
+	    	explored.add(parent);
+	    	for(int i=-1; i<1; i++){
+	    		for(int j =-1; j<1; j++){
+	    			if(Math.abs(j) != Math.abs(i))
+	    			{
+	    				Point child = new Point(parent.x + i, parent.y + j);
+	    				if(state.world[child.x][child.y] == state.WALL){
+	    					explored.add(child);
+	    				}
+	    				if(!(explored.contains(child) && frontier.contains(child))){
+	    					childParentLinks.put(child, parent);
+	    					if(state.world[child.x][child.y] == state.UNKNOWN){
+	    						return buildPathToChild(parent, child, childParentLinks);
+	    					}else
+	    					{
+	    						frontier.add(child);
+	    					}
+	    				}
+	    			}
+	    		}
+	    	}	
+	    }
+	}
+*/
+public ArrayList<Point> breadthFirstSearch(){
+	//dictionary = hasmap
+	//queue = frontier
+		HashMap<Point, Point> childParentLinks = new HashMap<Point, Point>();
+		Queue<Point> frontier = new LinkedList<Point>();
+		Point startPoint = new Point(state.agent_x_position, state.agent_y_position);
+		frontier.add(startPoint);
+		childParentLinks.put(startPoint, null);
+	    while(!frontier.isEmpty())
+	    {
+	    	Point parent = frontier.remove(); 
+	    	System.out.println("parent som vi har poppat ar " + parent.x + " " + parent.y);
+	    	if(parent.x >= 0 && parent.y >= 0 && state.world[parent.x][parent.y] == state.UNKNOWN){
+	    		return buildPathToChild(parent, childParentLinks);
+	    	}
+	    	for(int i=-1; i<=1; i++){
+	    		for(int j =-1; j<=1; j++){
+	    			Point child = new Point(parent.x + i, parent.y + j);
+	    			if((Math.abs(j) != Math.abs(i)) && !childParentLinks.containsKey(child))
+	    			{
+	    				if(state.world[child.x][child.y] != state.WALL){
+	    					System.out.println("child som vi har lagt in  ar " + child.x + " " + child.y);
+	    					childParentLinks.put(child, parent);
+	    					frontier.add(child);
+	    				}
+	    			}
+	    		}
+	    	}	
+	    }
+	    return null;
+	}
+
+
+	
+
+	public void prepareActions(ArrayList<Point> path){
+		
+			Point nextStep = path.remove(path.size() -1);
+			if(nextStep.x > state.agent_x_position)
+			{
+				turnEast();
+			}
+			else if(nextStep.x < state.agent_x_position)
+			{
+				turnWest();
+			}
+			else if(nextStep.y < state.agent_y_position)
+			{
+				turnNorth();
+			}
+			else if(nextStep.y > state.agent_y_position)
+			{
+				turnSouth();
+			}
+		}
+	
 
 	@Override
 	public Action execute(Percept percept) {
@@ -240,118 +395,155 @@ class MyAgentProgram implements AgentProgram {
 
 	    state.printWorldDebug();
 
-	    if(!foundEastWall)
-	    {
-	    	switch(state.agent_direction)
-	    	{
-	    		case MyAgentState.NORTH:
-	    			return rightTurn();    			
-	    		case MyAgentState.EAST:
-	    			if(bump)
-	    			{
-	    				foundEastWall = true;
-		    			return rightTurn();
-	    			}
-	    			else
-	    			{
-		    			return goForward();
-	    			}		
-	    		case MyAgentState.SOUTH:
-	    			return leftTurn();		
-	    		case MyAgentState.WEST:
-	    			return rightTurn();
-	    	}
-	    }
-	    // found east wall, look for south east corner
-	    else if (!foundCorner && foundEastWall)
-	    {
-	    	if (bump)
-	    	{
-	    		foundCorner = true;
-	    		return rightTurn();
-	    	}
-	    	else
-	    	{
-	    		return goForward();
-	    	}
-	    }
 
-	  //  System.out.println("Selection based on percept");
-	    // Next action selection based on the percept value
+	      // Next action selection based on the percept value
 	  	if (dirt)
 	    {
 	    	System.out.println("DIRT -> choosing SUCK action!");
 	    	state.agent_last_action=state.ACTION_SUCK;
 	    	return LIUVacuumEnvironment.ACTION_SUCK;
 	    } 
-	    else
-	    {
-	    	System.out.println("vi kollar åt  " + state.agent_direction);
-	    	if(queuedActions.size() > 0)
-	    	{
-	    		System.out.println("doing queued actions, size is "+queuedActions.size() );
-	    		return doQueuedActions();
-	    	} 
-	    	if (bump)
-	    	{
-	    		System.out.println("hitta bump");
 
-	    		switch (state.agent_direction)
-	    		{
-	    			case MyAgentState.NORTH:
-	    				if(home)
-	    				{
-	    					return rightTurn();
-	    				}
-	    				else
-	    				{
-	    					return leftTurn();
-	    				}
-			    	case MyAgentState.EAST:
-			    		return prepareUTurn(MyAgentState.EAST);
-	    			//found a west wall, we could either be home or in the middle of the snaking back up to home.
-	    			case MyAgentState.WEST:
-	    				if (home)
-	    				{
-	    					return NoOpAction.NO_OP;
-	    				}
-	    				else 
-	    				{
-	    					return prepareUTurn(MyAgentState.WEST);
-	    					
-	    				}
-	    		}
+
+	    if(queuedActions.size() == 0 && path.size() == 0){
+	    	path = breadthFirstSearch();
+	    	if(path == null){
+	    		return NoOpAction.NO_OP;
 	    	}
-	    	/*else
-	    	{	
-	    		if(state.agent_last_action == state.ACTION_MOVE_FORWARD)
-	    		{
-	    			if(state.agent_direction == state.NORTH)
-	    			{
-		    			if(nextTurn == state.ACTION_TURN_LEFT)
-		    			{
-		    				state.agent_last_action = state.ACTION_TURN_LEFT;
-		    				state.agent_direction = state.WEST;
-		    				return LIUVacuumEnvironment.ACTION_TURN_LEFT;
-		    			}
-		    				
-		    			else
-		    			{
-		    				state.agent_last_action = state.ACTION_TURN_LEFT;
-		    				state.agent_direction = state.WEST;
-		    				return LIUVacuumEnvironment.ACTION_TURN_RIGHT;	
-		    			}
-	    			}
-	    		}
-	    		else
-	    			{
-						state.agent_last_action=state.ACTION_MOVE_FORWARD;
-	    				return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-	    			}
-	    		}*/
 	    }
-	    state.agent_last_action=state.ACTION_MOVE_FORWARD;
-	    return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;	
+
+	    if (queuedActions.size() == 0){
+	    	System.out.println("storlek pa path "+path.size()+ " och queuedactions " + queuedActions.size());
+	    	prepareActions(path);
+	    }
+
+	    if(queuedActions.size() > 0){
+	    	return doQueuedActions();
+	    } 
+	    return NoOpAction.NO_OP;
+/*
+	    while(true){
+		    if (queuedActions.size() > 0){
+		    	return doQueuedActions();
+		    }
+
+		    if(path.size() > 0){
+		    	prepareActions(path);
+		    }
+		 //   System.out.println("path null " + path.size());
+	 		if(path.size() == 0){
+		    	path = breadthFirstSearch();
+		    	if (path == null){
+		    		
+		    	}
+		    }
+		}
+	    */
+	  
+	   	 
+	     
+	    //return NoOpAction.NO_OP;
+
+
+	    
+
+	 
+
+	  //  System.out.println("Selection based on percept");
+	  
+/*
+	    state.agent_last_action=state.ACTION_NONE;
+	    return LIUVacuumEnvironment.ACTION_NONE;
+	    */
+	}
+
+
+	public void turnEast(){
+		System.out.println("our direction right now is " + state.agent_direction+ " and we are gonna turn east");
+		switch(state.agent_direction){
+			case MyAgentState.EAST:
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.SOUTH:
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.NORTH:
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.WEST:
+				queuedActions.add(LEFT);
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+		}
+	}
+
+	public void turnWest(){
+		System.out.println("our direction right now is " + state.agent_direction+ " and we are gonna turn west");
+		switch(state.agent_direction){
+			case MyAgentState.EAST:
+				queuedActions.add(RIGHT);
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.SOUTH:
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.NORTH:
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.WEST:
+				queuedActions.add(FORWARD);
+				break;
+		}
+	}
+
+	public void turnSouth(){
+		System.out.println("our direction right now is " + state.agent_direction+ " and we are gonna turn south");
+		switch(state.agent_direction){
+			case MyAgentState.EAST:
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.SOUTH:
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.NORTH:
+				queuedActions.add(RIGHT);
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.WEST:
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+		}
+	}
+
+	public void turnNorth(){
+		System.out.println("our direction right now is " + state.agent_direction+ " and we are gonna turn north");
+		switch(state.agent_direction){
+			case MyAgentState.EAST:
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.SOUTH:
+				queuedActions.add(LEFT);
+				queuedActions.add(LEFT);
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.NORTH:
+				queuedActions.add(FORWARD);
+				break;
+			case MyAgentState.WEST:
+				queuedActions.add(RIGHT);
+				queuedActions.add(FORWARD);
+				break;
+		}
 	}
 }
 
