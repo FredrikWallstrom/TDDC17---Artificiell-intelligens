@@ -1,0 +1,48 @@
+
+
+
+## 5 objects
+## 3 rooms
+	ipp gives 0.02 sec
+	lama gives 0.16 sec
+
+## 5 objects
+## 5 rooms 
+	ipp gives 0.10 sec
+	lama gives 0.33 sec
+
+## 5 objects
+## 10 rooms
+	ipp gives 0.32 sec
+	lama gives 1.02 sec
+
+## 7 object 
+## 3 rooms
+	ipp gives 0.33
+	lama gives 1.27 sec
+
+## 7 object 
+## 5 rooms
+	ipp gives 0.82 sec
+	lama gives 2.81 sec
+
+
+## 7 objects
+## 10 rooms
+	ipp gives 3.61 sec
+	lama gives 9.45 sec
+
+## 10 objects
+## 3 rooms
+	ipp gives 6.94 sec
+	lama gives 42.7 sec
+
+## 10 objects where we vary rooms
+## 5 rooms 
+	ipp gives 17.34 sec
+	lama gives 72.14 sec
+
+## 10 objects where we vary rooms
+## 10 rooms 
+	ipp gives  78.76sec
+	lama gives  225.29 sec
