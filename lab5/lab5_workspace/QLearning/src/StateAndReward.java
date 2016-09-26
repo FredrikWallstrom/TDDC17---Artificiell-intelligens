@@ -4,8 +4,8 @@ public class StateAndReward {
 	/* State discretization function for the angle controller */
 	public static String getStateAngle(double angle, double vx, double vy) {
 
-		int discState = discretize2(angle, intervals, -3, 3);
-		String state = String.valueOf(discState);
+		int discAngle = discretize2(angle, intervals, -3, 3);
+		String state = String.valueOf(discAngle);
 		//System.out.println(state);
 		
 		return state;
@@ -13,11 +13,11 @@ public class StateAndReward {
 
 	/* Reward function for the angle controller */
 	public static double getRewardAngle(double angle, double vx, double vy) {
-		int discState = discretize2(angle, intervals, -3, 3);
+		int discAngle = discretize2(angle, intervals, -3, 3);
 
-		double reward = intervals/2 - Math.abs(intervals/2 - discState);
-		if (Math.abs(intervals/2 - discState) != 0) reward = reward / (intervals/2 - discState);
-		
+		double reward = intervals/2 - Math.abs(intervals/2 - discAngle);
+		if (Math.abs(intervals/2 - discAngle) != 0) reward = reward / Math.abs(intervals/2 - discAngle);
+		//System.out.println(reward);
 		return reward;
 	}
 
