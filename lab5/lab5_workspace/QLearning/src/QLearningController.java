@@ -147,10 +147,11 @@ public class QLearningController extends Controller {
 				} 
 				
 				//TODO ska det vara nya reward , enligt wiki ska det vara R+1 
-				double reward = StateAndReward.getRewardAngle(angle.getValue(), vx.getValue(), vy.getValue());
+				
+				//double reward = StateAndReward.getRewardHover(angle.getValue(), vx.getValue(), vy.getValue());
 				
 				double updateQ = Qtable.get(prev_stateaction) + alpha(Ntable.get(prev_stateaction)) * 
-							(reward + (GAMMA_DISCOUNT_FACTOR * getMaxActionQValue(new_state)) - Qtable.get(prev_stateaction));
+							(previous_reward + (GAMMA_DISCOUNT_FACTOR * getMaxActionQValue(new_state)) - Qtable.get(prev_stateaction));
 				Qtable.put(prev_stateaction, updateQ);
 				
 				/* See top for constants and below for helper functions */
