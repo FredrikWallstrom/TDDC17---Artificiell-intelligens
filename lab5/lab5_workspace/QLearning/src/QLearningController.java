@@ -24,7 +24,7 @@ public class QLearningController extends Controller {
 	RocketEngine middleEngine;
 	RocketEngine rightEngine;
 
-	final static int NUM_ACTIONS = 7; /* The takeAction function must be changed if this is modified */
+	final static int NUM_ACTIONS = 5; /* The takeAction function must be changed if this is modified */
 	
 	/* Keep track of the previous state and action */
 	String previous_state = null;
@@ -97,15 +97,15 @@ public class QLearningController extends Controller {
 		case 3:
 			middleEngine.setBursting(true);
 			break;
-		case 4:
+		/*case 4:
 			leftEngine.setBursting(true);
 			middleEngine.setBursting(true);
 			break;
 		case 5:
 			rightEngine.setBursting(true);
 			middleEngine.setBursting(true);
-			break;
-		case 6:
+			break;*/
+		case 4:
 			rightEngine.setBursting(true);
 			middleEngine.setBursting(true);
 			leftEngine.setBursting(true);

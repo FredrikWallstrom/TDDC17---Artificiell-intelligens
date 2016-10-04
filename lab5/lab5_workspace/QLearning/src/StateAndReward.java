@@ -1,10 +1,14 @@
 public class StateAndReward {
 
-	private static final int intervalsAngle = 13;
-	private static final int intervalsHorVelocity = 5;
-	private static final int intervalsVertVelocity = 7; 
-	//private static final int intervalsHorVelocity = 10;
-	//private static final int intervalsVertVelocity = 10;
+	private static final int intervalsAngle = 9;
+	private static final int intervalsHorVelocity = 4;
+	private static final int intervalsVertVelocity = 6; 
+	private static final double MAX_ANGLE = 1.5; // dessa va tre
+	private static final double MIN_ANGLE = -1.5; // dessa va minus tre
+	private static final int MIN_VX = -3;			// fin justera dessa dvs minska värdena 
+	private static final int MAX_VX = 3;			// fin justera dessa dvs minska värdena 
+	private static final int MIN_VY = -3;
+	private static final int MAX_VY = 3;
 	
 	/* State discretization function for the angle controller */
 	public static String getStateAngle(double angle, double vx, double vy) {
@@ -32,9 +36,9 @@ public class StateAndReward {
 	/* State discretization function for the full hover controller */
 	public static String getStateHover(double angle, double vx, double vy) {
 
-		int discAngle = discretize2(angle, intervalsAngle, -3, 3);
-		int discHorVelocity = discretize(vx, intervalsHorVelocity, -3, 3);
-		int discVertVelocity = discretize(vy, intervalsVertVelocity, -5.5, 5.5); 
+		int discAngle = discretize(angle, intervalsAngle, MIN_ANGLE, MAX_ANGLE);
+		int discHorVelocity = discretize(vx, intervalsHorVelocity, MIN_VX, MAX_VX);
+		int discVertVelocity = discretize(vy, intervalsVertVelocity, MIN_VY, MAX_VY); 
 		String state = "angle" + String.valueOf(discAngle) + "hor" + String.valueOf(discHorVelocity) + "vert" +  String.valueOf(discVertVelocity);
 		//System.out.println(discAngle);
 		
@@ -43,94 +47,30 @@ public class StateAndReward {
 
 	/* Reward function for the full hover controller */
 	public static double getRewardHover(double angle, double vx, double vy) {
-		int discAngle = discretize2(angle, intervalsAngle, -3, 3);
-		int discHorVelocity = discretize(vx, intervalsHorVelocity, -3, 3);
-		int discVertVelocity = discretize(vy, intervalsVertVelocity, -5.5, 5.5); 
-		
-		/*
-		// GOAL FOR ANGLE IS 6
-		double angleReward = intervalsAngle/2 - Math.abs(intervalsAngle/2 - discAngle);
-		if (Math.abs(intervalsAngle/2 - discAngle) != 0) angleReward = angleReward / Math.abs(intervalsAngle/2 - discAngle);
-		else{
-			angleReward = angleReward*2;
-		}
-		*/
-		
-		int distToGoalAngle = Math.abs(intervalsAngle/2 - discAngle);
+
+		// GOAL FOR ANGLE IS 4
 		double angleReward = 0;
-		switch(distToGoalAngle) {
-			case 0:
-				angleReward = 35;
-				break;
-			case 1:
-				angleReward = 15;
-				break;
-			case 2:
-				angleReward = 8;
-				break;
-			case 3:
-				angleReward = 1;
-				break;
-			default: break;
+		if(Math.abs(angle) <= MAX_ANGLE){
+			angleReward = 1 - Math.abs(angle)/MAX_ANGLE;
 		}
-		
+		 
 		
 		
 		// GOAL FOR HORIZONTAL IS state 2
-
-		/*
-		double horReward = intervalsHorVelocity /2 - Math.abs(intervalsHorVelocity/2 - discHorVelocity);
- 		if (Math.abs(intervalsHorVelocity/2 - discHorVelocity) != 0) horReward = horReward / Math.abs(intervalsHorVelocity/2 - discHorVelocity);
- 		else{
- 			horReward = horReward*5;
-		}
- 		*/
-		
-		int distToGoalVX = Math.abs(intervalsHorVelocity/2 - discHorVelocity);
 		double horReward = 0;
+		if(Math.abs(vx) <= MAX_VX){
+			horReward = 1 - Math.abs(vx)/MAX_VX ;
+		}
 		
-		switch(distToGoalVX) {
-		case 0:
-			horReward = 10;
-			break;
-		case 1:
-			horReward = 2;
-			break;
-		default: 
-			break;
-	}
-		
-
-		
-		//GOAL FOR VERTICAL IS state (3,4)
-		
- 		int distToGoalVY = Math.abs(intervalsVertVelocity/2 - discVertVelocity);
+ 		// GOAL STATE FOR VERTICAL IS 3
 		double vertReward = 0;
-		
-		switch(distToGoalVY) {
-		case 0:
-			vertReward = 35; 
-			break;
-		case 1:
-			vertReward = 5;
-			break;
-		case 2:
-			vertReward = 1;
-			break;
-		default: break;
+		if(Math.abs(vy) <= MAX_VY){
+			vertReward = 1 - Math.abs(vy)/MAX_VY ;
 		}
 		
- 		/*
-		double vertReward = Math.pow(intervalsVertVelocity /2 - Math.abs(intervalsVertVelocity/2 - discVertVelocity),2);
-		if (Math.abs(intervalsVertVelocity/2 - discVertVelocity) != 0) vertReward = vertReward / Math.pow((Math.abs(intervalsVertVelocity/2 - discVertVelocity)), 2);
-		else{
- 			vertReward = vertReward*2;
-		}
-		*/
-		double reward = angleReward + horReward + vertReward;
-		//System.out.println(vertReward);
+		double reward = Math.pow(angleReward,2) + Math.pow(horReward,2) + Math.pow(vertReward,2);
+	//	System.out.println(angleReward);
 		
-		//double reward = angleReward * horReward * vertReward;
 		return reward;
 	}
 
