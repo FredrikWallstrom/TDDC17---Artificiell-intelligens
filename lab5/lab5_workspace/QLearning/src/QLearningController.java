@@ -97,14 +97,6 @@ public class QLearningController extends Controller {
 		case 3:
 			middleEngine.setBursting(true);
 			break;
-		/*case 4:
-			leftEngine.setBursting(true);
-			middleEngine.setBursting(true);
-			break;
-		case 5:
-			rightEngine.setBursting(true);
-			middleEngine.setBursting(true);
-			break;*/
 		case 4:
 			rightEngine.setBursting(true);
 			middleEngine.setBursting(true);

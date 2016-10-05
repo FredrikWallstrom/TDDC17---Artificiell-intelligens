@@ -1,19 +1,19 @@
 public class StateAndReward {
 
-	private static final int intervalsAngle = 9;
-	private static final int intervalsHorVelocity = 4;
-	private static final int intervalsVertVelocity = 6; 
-	private static final double MAX_ANGLE = 1.5; // dessa va tre
-	private static final double MIN_ANGLE = -1.5; // dessa va minus tre
-	private static final int MIN_VX = -3;			// fin justera dessa dvs minska värdena 
-	private static final int MAX_VX = 3;			// fin justera dessa dvs minska värdena 
+	private static final int angleStates = 10;
+	private static final int horStates = 4;
+	private static final int vertStates = 6; 
+	private static final double MAX_ANGLE = 2; 
+	private static final double MIN_ANGLE = -2; 
+	private static final double MIN_VX = -1.5;			 
+	private static final double MAX_VX = 1.5;			 
 	private static final int MIN_VY = -3;
 	private static final int MAX_VY = 3;
 	
 	/* State discretization function for the angle controller */
 	public static String getStateAngle(double angle, double vx, double vy) {
 
-		int discAngle = discretize2(angle, intervalsAngle, -3, 3);
+		int discAngle = discretize2(angle, angleStates, MIN_ANGLE, MAX_ANGLE);
 		String state = String.valueOf(discAngle);
 		//System.out.println(state);
 		
@@ -22,23 +22,23 @@ public class StateAndReward {
 
 	/* Reward function for the angle controller */
 	public static double getRewardAngle(double angle, double vx, double vy) {
-		int discAngle = discretize2(angle, intervalsAngle, -3, 3);
-
-		double reward = intervalsAngle/2 - Math.abs(intervalsAngle/2 - discAngle);
-		if (Math.abs(intervalsAngle/2 - discAngle) != 0) reward = reward / (Math.abs(intervalsAngle/2 - discAngle));
-		else{
-			reward = reward*2;
+		int discAngle = discretize2(angle, angleStates, MIN_ANGLE, MAX_ANGLE);
+		// GOAL FOR ANGLE IS 4
+		double angleReward = 0;
+		if(Math.abs(angle) <= MAX_ANGLE){
+			angleReward = 1 - Math.abs(angle)/MAX_ANGLE;
 		}
+	
 		//System.out.println(reward);
-		return reward;
+		return angleReward;
 	}
 
 	/* State discretization function for the full hover controller */
 	public static String getStateHover(double angle, double vx, double vy) {
 
-		int discAngle = discretize(angle, intervalsAngle, MIN_ANGLE, MAX_ANGLE);
-		int discHorVelocity = discretize(vx, intervalsHorVelocity, MIN_VX, MAX_VX);
-		int discVertVelocity = discretize(vy, intervalsVertVelocity, MIN_VY, MAX_VY); 
+		int discAngle = discretize(angle, angleStates, MIN_ANGLE, MAX_ANGLE);
+		int discHorVelocity = discretize(vx, horStates, MIN_VX, MAX_VX);
+		int discVertVelocity = discretize(vy, vertStates, MIN_VY, MAX_VY); 
 		String state = "angle" + String.valueOf(discAngle) + "hor" + String.valueOf(discHorVelocity) + "vert" +  String.valueOf(discVertVelocity);
 		//System.out.println(discAngle);
 		
@@ -54,7 +54,6 @@ public class StateAndReward {
 			angleReward = 1 - Math.abs(angle)/MAX_ANGLE;
 		}
 		 
-		
 		
 		// GOAL FOR HORIZONTAL IS state 2
 		double horReward = 0;
