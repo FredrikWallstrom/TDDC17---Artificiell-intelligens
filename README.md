@@ -1,5 +1,5 @@
 # TDDC17-Artificial-Intelligens
-Labs for AI course. Pair programmed with @GeorgeYildiz. Lab 1: Intelligent Agents Lab 2: Search
+Labs for AI course. Pair programmed with @GeorgeYildiz.
 
 Lab 1: Intelligent Agents 
 
